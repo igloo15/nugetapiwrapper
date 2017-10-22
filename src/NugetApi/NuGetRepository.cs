@@ -13,70 +13,51 @@ namespace NugetApi
     public class NuGetRepository
     {
 
-        private List<MainFeed> sources = new List<MainFeed>();
+        private AggregateFeed aggregateFeed;
         private MainFeed cacheFeed;
         private MainFeed installFeed;
 
-        public NuGetRepository(string cacheLocation, string installLocation, params string[] sources)
+        public NuGetRepository(string cacheLocation, params string[] sources)
         {
-            this.sources.AddRange(sources.Select(s => new MainFeed(s)));
+            aggregateFeed = new AggregateFeed(sources.Select(s => new MainFeed(s)).ToArray());
 
             cacheFeed = new MainFeed(cacheLocation);
-            installFeed = new MainFeed(installLocation);
-
-            if (!installFeed.IsLocal)
-                throw new ArgumentException("Install Location is not local to machine", "installLocation");
-
+            
             if (!cacheFeed.IsLocal)
                 throw new ArgumentException("Cache Location is not local to machine", "cacheLocation");
 
-            this.sources.Add(installFeed);
-            this.sources.Add(cacheFeed);
+            aggregateFeed.AddFeed(cacheFeed);
 
         }
 
-        public async Task<IEnumerable<IPackage>> Search(string searchTerm)
+        public async Task<IEnumerable<IRemotePackage>> Search(string searchTerm)
         {
-            foreach(var feed in sources)
-            {
-                var results =  await feed.Search(searchTerm);
-
-                if (results.Any())
-                    return results;
-            }
-
-            return new List<IPackage>();
+            return await aggregateFeed.Search(searchTerm);
         }
 
-        public async Task<IEnumerable<IPackage>> SearchById(string id)
+        public async Task<IEnumerable<IRemotePackage>> SearchById(string id)
         {
-            foreach (var feed in sources)
-            {
-                var results = await feed.SearchById(id);
-
-                if (results.Any())
-                    return results;
-            }
-
-            return new List<IPackage>();
+            return await aggregateFeed.SearchById(id);
         }
 
-        public async Task<IEnumerable<IPackage>> SearchByTags(string tags)
+        public async Task<IEnumerable<IRemotePackage>> SearchByTags(string tags)
         {
-            foreach (var feed in sources)
-            {
-                var results = await feed.SearchByTag(tags);
-
-                if (results.Any())
-                    return results;
-            }
-
-            return new List<IPackage>();
+            return await aggregateFeed.SearchByTag(tags);
         }
 
         public IEnumerable<IFeed> GetFeeds()
         {
-            return sources;
+            return aggregateFeed.Feeds;
+        }
+        
+        public static IFeed CreateFeed(string source)
+        {
+            return new MainFeed(source);
+        }
+
+        public static IFeed CreateAggregateFeed(params string[] sources)
+        {
+            return new AggregateFeed(sources.Select(s => new MainFeed(s)).ToArray());
         }
     }
 }

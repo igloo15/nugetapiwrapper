@@ -23,37 +23,27 @@ namespace NugetApi.Feeds
 
         public bool IsLocal => repo.PackageSource.IsLocal;
 
-        public Task<IEnumerable<IPackage>> Search(string searchTerm)
+        public Task<IEnumerable<IRemotePackage>> Search(string searchTerm)
         {
             return repo.GetResource<PackageSearchResource>().SearchAsync(searchTerm, new SearchFilter(true), 0, 100, NullLogger.Instance, CancellationToken.None)
-                .ContinueWith<IEnumerable<IPackage>>(tr => 
+                .ContinueWith<IEnumerable<IRemotePackage>>(tr => 
                 {
                     return tr.Result.Select(meta => new V2Package(meta, repo));
                 });
         }
 
-        public Task<IEnumerable<IPackage>> SearchById(string packageId)
+        public Task<IEnumerable<IRemotePackage>> SearchById(string packageId)
         {
             if (repo.PackageSource.IsHttp)
                 packageId = "id:" + packageId;
-
-            return repo.GetResource<PackageSearchResource>().SearchAsync(packageId, new SearchFilter(true), 0, 100, NullLogger.Instance, CancellationToken.None)
-                .ContinueWith<IEnumerable<IPackage>>(tr => 
-                {
-                    return tr.Result.Select(meta => new V2Package(meta, repo));
-                });
+            return Search(packageId);
         }
 
-        public Task<IEnumerable<IPackage>> SearchByTag(string tag)
+        public Task<IEnumerable<IRemotePackage>> SearchByTag(string tag)
         {
             if (repo.PackageSource.IsHttp)
                 tag = "tags:" + tag;
-
-            return repo.GetResource<PackageSearchResource>().SearchAsync(tag, new SearchFilter(true), 0, 100, NullLogger.Instance, CancellationToken.None)
-                .ContinueWith<IEnumerable<IPackage>>(tr => 
-                {
-                    return tr.Result.Select(meta => new V2Package(meta, repo));
-                });
+            return Search(tag);
         }
     }
 }

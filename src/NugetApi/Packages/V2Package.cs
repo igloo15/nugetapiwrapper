@@ -4,6 +4,7 @@ using NuGet.Packaging.Core;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
+using NugetApi.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace NugetApi.Packages
 {
-    internal class V2Package : IPackage
+    internal class V2Package : IRemotePackage
     {
         private IPackageSearchMetadata metaData;
         private SourceRepository source;
@@ -24,22 +25,18 @@ namespace NugetApi.Packages
             this.source = source;
         }
 
-        public async void Download(string folder, NuGetVersion version)
+        public IPackageDownloadStream Download(string folder, NuGetVersion version)
         {
-            ///if(!source.PackageSource.IsHttp)
-            DownloadResourceResult x = await source.GetResource<DownloadResource>()
-                .GetDownloadResourceResultAsync(new PackageIdentity(metaData.Identity.Id, version), 
-                new PackageDownloadContext(new SourceCacheContext()), 
-                folder, 
-                NullLogger.Instance, 
-                CancellationToken.None);
-        }
+            ///if(!source.PackageSource.IsHttp)                
 
-        public void Install(string folder, NuGetVersion version)
-        {
-            //source.
-        }
+            var resource = source.GetResource<DownloadResource>();
 
+            var newWrapper = new DownloadResourceWrapper(resource, new PackageIdentity(metaData.Identity.Id, version), folder);
+
+            return newWrapper;
+            
+        }
+        
         public NuGetVersion GetLatestVersion()
         {
             return metaData.GetVersionsAsync().Result.OrderByDescending(vi => vi.Version).Where(vi => !vi.Version.IsPrerelease).Select(vi => vi.Version).FirstOrDefault();

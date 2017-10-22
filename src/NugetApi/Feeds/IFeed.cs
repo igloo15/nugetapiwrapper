@@ -10,10 +10,10 @@ namespace NugetApi.Feeds
     {
         bool IsLocal { get; }
 
-        Task<IEnumerable<IPackage>> Search(string searchTerm);
+        Task<IEnumerable<IRemotePackage>> Search(string searchTerm);
 
-        Task<IEnumerable<IPackage>> SearchById(string packageId);
+        Task<IEnumerable<IRemotePackage>> SearchById(string packageId);
 
-        Task<IEnumerable<IPackage>> SearchByTag(string tag);
+        Task<IEnumerable<IRemotePackage>> SearchByTag(string tag);
     }
 }
